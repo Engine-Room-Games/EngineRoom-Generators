@@ -1,0 +1,11 @@
+/// <summary>
+/// On a <see cref="SingletonAttribute"/>-decorated class that has no member
+/// tagged with <see cref="SingletonMemberAttribute"/>, marks a public method or
+/// property to be excluded from the generated singleton interface. Has no
+/// effect when the class is in explicit mode (i.e. uses
+/// <see cref="SingletonMemberAttribute"/> elsewhere).
+/// </summary>
+[global::System.AttributeUsage(global::System.AttributeTargets.Method | global::System.AttributeTargets.Property)]
+public sealed class IgnoreSingletonMemberAttribute : global::System.Attribute
+{
+}

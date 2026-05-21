@@ -1,4 +1,4 @@
-partial class %%ClassName%% : %%InterfaceName%%
+partial class %%ClassName%%%%BaseList%%
 {
     private void Awake()
     {

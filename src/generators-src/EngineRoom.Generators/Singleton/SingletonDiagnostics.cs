@@ -45,5 +45,29 @@ namespace EngineRoom.Generators.Singleton
             category: Category,
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
+
+        public static readonly DiagnosticDescriptor IgnoreUnusedInExplicitMode = new DiagnosticDescriptor(
+            id: "ERG0006",
+            title: "[IgnoreSingletonMember] has no effect when [SingletonMember] is used on the class",
+            messageFormat: "Member '{0}' is marked [IgnoreSingletonMember] but the containing class uses [SingletonMember] for explicit selection. Remove [IgnoreSingletonMember] or drop the [SingletonMember] usages.",
+            category: Category,
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
+        public static readonly DiagnosticDescriptor CustomInterfaceNotImplemented = new DiagnosticDescriptor(
+            id: "ERG0007",
+            title: "[Singleton] custom interface must be listed in the class base list",
+            messageFormat: "Class '{0}' is decorated with [Singleton(typeof({1}))] but does not list '{1}' in its base list. Add it next to the class declaration.",
+            category: Category,
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
+        public static readonly DiagnosticDescriptor CustomInterfaceMustBeInterface = new DiagnosticDescriptor(
+            id: "ERG0008",
+            title: "[Singleton] custom interface argument must be an interface type",
+            messageFormat: "Class '{0}' is decorated with [Singleton(typeof({1}))] but '{1}' is not an interface",
+            category: Category,
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
     }
 }

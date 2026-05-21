@@ -7,6 +7,7 @@ namespace EngineRoom.Generators.Singleton
         public SingletonInfo(
             string className,
             string interfaceName,
+            bool hasCustomInterface,
             string? @namespace,
             string hintPrefix,
             bool destroyOnLoad,
@@ -15,6 +16,7 @@ namespace EngineRoom.Generators.Singleton
         {
             ClassName = className;
             InterfaceName = interfaceName;
+            HasCustomInterface = hasCustomInterface;
             Namespace = @namespace;
             HintPrefix = hintPrefix;
             DestroyOnLoad = destroyOnLoad;
@@ -25,6 +27,8 @@ namespace EngineRoom.Generators.Singleton
         public string ClassName { get; }
 
         public string InterfaceName { get; }
+
+        public bool HasCustomInterface { get; }
 
         public string? Namespace { get; }
 
@@ -45,7 +49,9 @@ namespace EngineRoom.Generators.Singleton
                     var id = diagnostic.Descriptor.Id;
                     if (id == SingletonDiagnostics.MustBeMonoBehaviour.Id
                         || id == SingletonDiagnostics.MustBePartial.Id
-                        || id == SingletonDiagnostics.MustNotDefineAwake.Id)
+                        || id == SingletonDiagnostics.MustNotDefineAwake.Id
+                        || id == SingletonDiagnostics.CustomInterfaceNotImplemented.Id
+                        || id == SingletonDiagnostics.CustomInterfaceMustBeInterface.Id)
                     {
                         return true;
                     }
