@@ -19,6 +19,20 @@ namespace EngineRoom.Generators.Helpers
                 | SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers
                 | SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
+        public static string AccessibilityKeyword(Accessibility accessibility)
+        {
+            return accessibility switch
+            {
+                Accessibility.Public => "public ",
+                Accessibility.Internal => "internal ",
+                Accessibility.Protected => "protected ",
+                Accessibility.ProtectedAndInternal => "private protected ",
+                Accessibility.ProtectedOrInternal => "protected internal ",
+                Accessibility.Private => "private ",
+                _ => string.Empty,
+            };
+        }
+
         public static string FormatAsInterfaceMember(ISymbol symbol)
         {
             return symbol switch

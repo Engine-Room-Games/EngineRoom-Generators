@@ -22,7 +22,7 @@ namespace EngineRoom.Generators.Singleton
         private const string AttributeFullName = "EngineRoom.SingletonAttribute";
         private const string MemberAttributeFullName = "EngineRoom.SingletonMemberAttribute";
         private const string IgnoreMemberAttributeFullName = "EngineRoom.IgnoreSingletonMemberAttribute";
-        private const string MonoBehaviourFullName = "global::UnityEngine.MonoBehaviour";
+        private const string MonoBehaviourFullyQualifiedName = "global::UnityEngine.MonoBehaviour";
 
         private const string RuntimeNamespace = "EngineRoom";
 
@@ -63,7 +63,7 @@ namespace EngineRoom.Generators.Singleton
             var className = classSymbol.Name;
             var diagnostics = new List<DiagnosticInfo>();
 
-            if (!InheritsMonoBehaviour(classSymbol))
+            if (!SymbolInspector.InheritsFrom(classSymbol, MonoBehaviourFullyQualifiedName))
             {
                 diagnostics.Add(new DiagnosticInfo(SingletonDiagnostics.MustBeMonoBehaviour, classLocation, className));
             }
@@ -112,7 +112,7 @@ namespace EngineRoom.Generators.Singleton
                 }
                 else
                 {
-                    if (!ClassListsInterface(classSymbol, customInterface))
+                    if (!SymbolInspector.ImplementsInterface(classSymbol, customInterface))
                     {
                         diagnostics.Add(new DiagnosticInfo(
                             SingletonDiagnostics.CustomInterfaceNotImplemented,
@@ -121,7 +121,7 @@ namespace EngineRoom.Generators.Singleton
                             customInterface.ToDisplayString()));
                     }
 
-                    if (!IsExtensibleInSource(customInterface))
+                    if (!SymbolInspector.IsTopLevelPartialInCompilation(customInterface))
                     {
                         diagnostics.Add(new DiagnosticInfo(
                             SingletonDiagnostics.CustomInterfaceMustBeExtensible,
@@ -131,7 +131,7 @@ namespace EngineRoom.Generators.Singleton
                     }
 
                     customInterfaceShortName = customInterface.Name;
-                    customInterfaceAccessibility = AccessibilityKeyword(customInterface.DeclaredAccessibility);
+                    customInterfaceAccessibility = SymbolFormatter.AccessibilityKeyword(customInterface.DeclaredAccessibility);
                     customInterfaceNamespace = customInterface.ContainingNamespace.IsGlobalNamespace
                         ? null
                         : customInterface.ContainingNamespace.ToDisplayString();
@@ -163,7 +163,7 @@ namespace EngineRoom.Generators.Singleton
         private static List<string> CollectMembers(INamedTypeSymbol classSymbol, List<DiagnosticInfo> diagnostics, Location fallbackLocation)
         {
             var members = classSymbol.GetMembers();
-            var hasExplicitTag = members.Any(static member => HasAttribute(member, MemberAttributeFullName));
+            var hasExplicitTag = members.Any(static member => SymbolInspector.HasAttribute(member, MemberAttributeFullName));
 
             return hasExplicitTag
                 ? CollectExplicitMembers(members, diagnostics, fallbackLocation)
@@ -178,12 +178,12 @@ namespace EngineRoom.Generators.Singleton
             {
                 var memberLocation = member.Locations.FirstOrDefault() ?? fallbackLocation;
 
-                if (HasAttribute(member, IgnoreMemberAttributeFullName))
+                if (SymbolInspector.HasAttribute(member, IgnoreMemberAttributeFullName))
                 {
                     diagnostics.Add(new DiagnosticInfo(SingletonDiagnostics.IgnoreUnusedInExplicitMode, memberLocation, member.Name));
                 }
 
-                if (!HasAttribute(member, MemberAttributeFullName))
+                if (!SymbolInspector.HasAttribute(member, MemberAttributeFullName))
                 {
                     continue;
                 }
@@ -217,7 +217,7 @@ namespace EngineRoom.Generators.Singleton
 
             foreach (var member in members)
             {
-                if (HasAttribute(member, IgnoreMemberAttributeFullName))
+                if (SymbolInspector.HasAttribute(member, IgnoreMemberAttributeFullName))
                 {
                     continue;
                 }
@@ -254,87 +254,6 @@ namespace EngineRoom.Generators.Singleton
                 IPropertySymbol property => !property.IsIndexer,
                 _ => false,
             };
-        }
-
-        private static bool HasAttribute(ISymbol member, string attributeFullName)
-        {
-            foreach (var attribute in member.GetAttributes())
-            {
-                if (attribute.AttributeClass?.ToDisplayString() == attributeFullName)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool ClassListsInterface(INamedTypeSymbol classSymbol, INamedTypeSymbol interfaceSymbol)
-        {
-            foreach (var declared in classSymbol.Interfaces)
-            {
-                if (SymbolEqualityComparer.Default.Equals(declared, interfaceSymbol))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        // The generator extends the custom interface by emitting a partial that
-        // adds the ISingleton<> base. That only works when the interface is a
-        // top-level, non-generic partial defined in the current compilation.
-        private static bool IsExtensibleInSource(INamedTypeSymbol interfaceSymbol)
-        {
-            if (interfaceSymbol.ContainingType is not null
-                || interfaceSymbol.IsGenericType
-                || interfaceSymbol.DeclaringSyntaxReferences.Length == 0)
-            {
-                return false;
-            }
-
-            foreach (var reference in interfaceSymbol.DeclaringSyntaxReferences)
-            {
-                if (reference.GetSyntax() is InterfaceDeclarationSyntax declaration
-                    && declaration.Modifiers.Any(SyntaxKind.PartialKeyword))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static string AccessibilityKeyword(Accessibility accessibility)
-        {
-            return accessibility switch
-            {
-                Accessibility.Public => "public ",
-                Accessibility.Internal => "internal ",
-                Accessibility.Protected => "protected ",
-                Accessibility.ProtectedAndInternal => "private protected ",
-                Accessibility.ProtectedOrInternal => "protected internal ",
-                Accessibility.Private => "private ",
-                _ => string.Empty,
-            };
-        }
-
-        private static bool InheritsMonoBehaviour(INamedTypeSymbol type)
-        {
-            var current = type.BaseType;
-            while (current is not null)
-            {
-                var name = current.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                if (name == MonoBehaviourFullName)
-                {
-                    return true;
-                }
-
-                current = current.BaseType;
-            }
-
-            return false;
         }
 
         private static (INamedTypeSymbol? CustomInterface, bool DestroyOnLoad) ReadAttributeArgs(AttributeData attribute)

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using EngineRoom.Generators.Helpers;
 using Microsoft.CodeAnalysis;
 
 namespace EngineRoom.Generators.Singleton
