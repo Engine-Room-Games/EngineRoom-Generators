@@ -1,0 +1,2 @@
+transform.SetParent(null);
+DontDestroyOnLoad(gameObject);

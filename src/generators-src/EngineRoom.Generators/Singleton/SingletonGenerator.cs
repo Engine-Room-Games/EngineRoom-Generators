@@ -432,11 +432,16 @@ namespace EngineRoom.Generators.Singleton
             // the right indent inside the Awake body in the template.
             var dontDestroyLine = info.DestroyOnLoad
                 ? string.Empty
-                : "DontDestroyOnLoad(gameObject);";
+                : TemplateLoader.Load("Singleton/DontDestroyLine").TrimEnd('\r', '\n');
 
             // The user adds the custom interface to the base list themselves, so the
             // generated partial declares the class with no base list of its own.
-            var baseList = info.HasCustomInterface ? string.Empty : " : " + info.InterfaceName;
+            var baseList = info.HasCustomInterface
+                ? string.Empty
+                : TemplateLoader.LoadAndSubstitute("Singleton/SingletonBaseList", new Dictionary<string, string>
+                {
+                    ["InterfaceName"] = info.InterfaceName,
+                }).TrimEnd('\r', '\n');
 
             var partialBody = TemplateLoader.LoadAndSubstitute("Singleton/SingletonPartial", new Dictionary<string, string>
             {

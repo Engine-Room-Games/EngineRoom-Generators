@@ -11,8 +11,8 @@ partial class %%ClassName%%%%BaseList%%
 
         %%DontDestroyLine%%
         %%InterfaceName%%.Instance = this;
-        AwakeInternal();
+        OnAwake();
     }
 
-    partial void AwakeInternal();
+    partial void OnAwake();
 }
