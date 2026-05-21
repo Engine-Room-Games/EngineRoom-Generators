@@ -1,0 +1,24 @@
+# Unity project has its own .gitignore at src/generators-unity/.gitignore.
+# This file covers the .NET generator side and OS junk.
+
+# .NET / Roslyn generators
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userprefs
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# IDE
+.idea/
+.vs/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
