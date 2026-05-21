@@ -10,20 +10,12 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace EngineRoom.Generators.Singleton
 {
-    /// <summary>
-    /// Source generator for [Singleton]-decorated MonoBehaviours.
-    /// Injects the runtime attributes and ISingleton&lt;T&gt; interface, then for each
-    /// decorated class emits a matching I&lt;ClassName&gt; interface and a partial Awake
-    /// implementation that publishes the instance and (optionally) keeps it across scenes.
-    /// </summary>
+    // Validation lives in SingletonAnalyzer; this generator silently skips any
+    // input the analyzer would flag, so its output never piles on top of a
+    // compile error.
     [Generator(LanguageNames.CSharp)]
     public sealed class SingletonGenerator : IIncrementalGenerator
     {
-        private const string AttributeFullName = "EngineRoom.SingletonAttribute";
-        private const string MemberAttributeFullName = "EngineRoom.SingletonMemberAttribute";
-        private const string IgnoreMemberAttributeFullName = "EngineRoom.IgnoreSingletonMemberAttribute";
-        private const string MonoBehaviourFullyQualifiedName = "global::UnityEngine.MonoBehaviour";
-
         private const string RuntimeNamespace = "EngineRoom";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -38,17 +30,12 @@ namespace EngineRoom.Generators.Singleton
 
             var singletons = context.SyntaxProvider
                 .ForAttributeWithMetadataName(
-                    AttributeFullName,
+                    SingletonConstants.AttributeFullName,
                     predicate: static (node, _) => node is ClassDeclarationSyntax,
                     transform: static (ctx, _) => ExtractInfo(ctx))
                 .Where(static info => info is not null);
 
             context.RegisterSourceOutput(singletons, static (ctx, info) => Emit(ctx, info!));
-
-            // Two classes targeting the same custom interface would race on the
-            // shared static Instance slot — surface that as a compile error.
-            // Needs a Collect step because the check is cross-symbol.
-            context.RegisterSourceOutput(singletons.Collect(), static (ctx, infos) => ReportInterfaceCollisions(ctx, infos));
         }
 
         private static SingletonInfo? ExtractInfo(GeneratorAttributeSyntaxContext ctx)
@@ -59,33 +46,29 @@ namespace EngineRoom.Generators.Singleton
             }
 
             var classDeclaration = (ClassDeclarationSyntax)ctx.TargetNode;
-            var classLocation = classDeclaration.Identifier.GetLocation();
-            var className = classSymbol.Name;
-            var diagnostics = new List<DiagnosticInfo>();
 
-            if (!SymbolInspector.InheritsFrom(classSymbol, MonoBehaviourFullyQualifiedName))
+            if (!SymbolInspector.InheritsFrom(classSymbol, SingletonConstants.MonoBehaviourFullyQualifiedName))
             {
-                diagnostics.Add(new DiagnosticInfo(SingletonDiagnostics.MustBeMonoBehaviour, classLocation, className));
+                return null;
             }
 
             if (!classDeclaration.Modifiers.Any(SyntaxKind.PartialKeyword))
             {
-                diagnostics.Add(new DiagnosticInfo(SingletonDiagnostics.MustBePartial, classLocation, className));
+                return null;
             }
 
-            var existingAwake = classSymbol.GetMembers("Awake")
+            var hasOwnAwake = classSymbol.GetMembers("Awake")
                 .OfType<IMethodSymbol>()
-                .FirstOrDefault(static method => method.MethodKind == MethodKind.Ordinary
+                .Any(static method => method.MethodKind == MethodKind.Ordinary
                     && method.Parameters.Length == 0
                     && !method.IsStatic);
-            if (existingAwake is not null)
+            if (hasOwnAwake)
             {
-                var awakeLocation = existingAwake.Locations.FirstOrDefault() ?? classLocation;
-                diagnostics.Add(new DiagnosticInfo(SingletonDiagnostics.MustNotDefineAwake, awakeLocation, className));
+                return null;
             }
 
             var attribute = ctx.Attributes[0];
-            var (customInterface, destroyOnLoad) = ReadAttributeArgs(attribute);
+            var (customInterface, destroyOnLoad) = SingletonAttributeReader.Read(attribute);
 
             string interfaceName;
             bool hasCustomInterface;
@@ -94,59 +77,36 @@ namespace EngineRoom.Generators.Singleton
             string? customInterfaceNamespace = null;
             if (customInterface is null)
             {
-                interfaceName = "I" + className;
+                interfaceName = "I" + classSymbol.Name;
                 hasCustomInterface = false;
             }
             else
             {
+                if (customInterface.TypeKind != TypeKind.Interface
+                    || !SymbolInspector.ImplementsInterface(classSymbol, customInterface)
+                    || !SymbolInspector.IsTopLevelPartialInCompilation(customInterface))
+                {
+                    return null;
+                }
+
                 hasCustomInterface = true;
                 interfaceName = customInterface.ToDisplayString(SymbolFormatter.FullyQualifiedType);
-
-                if (customInterface.TypeKind != TypeKind.Interface)
-                {
-                    diagnostics.Add(new DiagnosticInfo(
-                        SingletonDiagnostics.CustomInterfaceMustBeInterface,
-                        classLocation,
-                        className,
-                        customInterface.ToDisplayString()));
-                }
-                else
-                {
-                    if (!SymbolInspector.ImplementsInterface(classSymbol, customInterface))
-                    {
-                        diagnostics.Add(new DiagnosticInfo(
-                            SingletonDiagnostics.CustomInterfaceNotImplemented,
-                            classLocation,
-                            className,
-                            customInterface.ToDisplayString()));
-                    }
-
-                    if (!SymbolInspector.IsTopLevelPartialInCompilation(customInterface))
-                    {
-                        diagnostics.Add(new DiagnosticInfo(
-                            SingletonDiagnostics.CustomInterfaceMustBeExtensible,
-                            classLocation,
-                            className,
-                            customInterface.ToDisplayString()));
-                    }
-
-                    customInterfaceShortName = customInterface.Name;
-                    customInterfaceAccessibility = SymbolFormatter.AccessibilityKeyword(customInterface.DeclaredAccessibility);
-                    customInterfaceNamespace = customInterface.ContainingNamespace.IsGlobalNamespace
-                        ? null
-                        : customInterface.ContainingNamespace.ToDisplayString();
-                }
+                customInterfaceShortName = customInterface.Name;
+                customInterfaceAccessibility = SymbolFormatter.AccessibilityKeyword(customInterface.DeclaredAccessibility);
+                customInterfaceNamespace = customInterface.ContainingNamespace.IsGlobalNamespace
+                    ? null
+                    : customInterface.ContainingNamespace.ToDisplayString();
             }
 
-            var memberDeclarations = CollectMembers(classSymbol, diagnostics, classLocation);
+            var memberDeclarations = CollectMembers(classSymbol);
 
             var containingNamespace = classSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
                 : classSymbol.ContainingNamespace.ToDisplayString();
-            var hintPrefix = containingNamespace is null ? className : containingNamespace + "." + className;
+            var hintPrefix = containingNamespace is null ? classSymbol.Name : containingNamespace + "." + classSymbol.Name;
 
             return new SingletonInfo(
-                className: className,
+                className: classSymbol.Name,
                 interfaceName: interfaceName,
                 hasCustomInterface: hasCustomInterface,
                 customInterfaceShortName: customInterfaceShortName,
@@ -155,48 +115,33 @@ namespace EngineRoom.Generators.Singleton
                 @namespace: containingNamespace,
                 hintPrefix: hintPrefix,
                 destroyOnLoad: destroyOnLoad,
-                classLocation: classLocation,
-                memberDeclarations: memberDeclarations,
-                diagnostics: diagnostics);
+                memberDeclarations: memberDeclarations);
         }
 
-        private static List<string> CollectMembers(INamedTypeSymbol classSymbol, List<DiagnosticInfo> diagnostics, Location fallbackLocation)
+        private static List<string> CollectMembers(INamedTypeSymbol classSymbol)
         {
             var members = classSymbol.GetMembers();
-            var hasExplicitTag = members.Any(static member => SymbolInspector.HasAttribute(member, MemberAttributeFullName));
+            var hasExplicitTag = members.Any(static member =>
+                SymbolInspector.HasAttribute(member, SingletonConstants.MemberAttributeFullName));
 
             return hasExplicitTag
-                ? CollectExplicitMembers(members, diagnostics, fallbackLocation)
-                : CollectAutoMembers(classSymbol, members, fallbackLocation);
+                ? CollectExplicitMembers(members)
+                : CollectAutoMembers(classSymbol, members);
         }
 
-        private static List<string> CollectExplicitMembers(ImmutableArray<ISymbol> members, List<DiagnosticInfo> diagnostics, Location fallbackLocation)
+        private static List<string> CollectExplicitMembers(ImmutableArray<ISymbol> members)
         {
             var declarations = new List<string>();
 
             foreach (var member in members)
             {
-                var memberLocation = member.Locations.FirstOrDefault() ?? fallbackLocation;
-
-                if (SymbolInspector.HasAttribute(member, IgnoreMemberAttributeFullName))
-                {
-                    diagnostics.Add(new DiagnosticInfo(SingletonDiagnostics.IgnoreUnusedInExplicitMode, memberLocation, member.Name));
-                }
-
-                if (!SymbolInspector.HasAttribute(member, MemberAttributeFullName))
+                if (!SymbolInspector.HasAttribute(member, SingletonConstants.MemberAttributeFullName))
                 {
                     continue;
                 }
 
-                if (member.IsStatic)
+                if (member.IsStatic || member.DeclaredAccessibility != Accessibility.Public)
                 {
-                    diagnostics.Add(new DiagnosticInfo(SingletonDiagnostics.MemberMustBeInstance, memberLocation, member.Name));
-                    continue;
-                }
-
-                if (member.DeclaredAccessibility != Accessibility.Public)
-                {
-                    diagnostics.Add(new DiagnosticInfo(SingletonDiagnostics.MemberMustBePublic, memberLocation, member.Name));
                     continue;
                 }
 
@@ -210,14 +155,13 @@ namespace EngineRoom.Generators.Singleton
             return declarations;
         }
 
-        private static List<string> CollectAutoMembers(INamedTypeSymbol classSymbol, ImmutableArray<ISymbol> members, Location fallbackLocation)
+        private static List<string> CollectAutoMembers(INamedTypeSymbol classSymbol, ImmutableArray<ISymbol> members)
         {
-            _ = fallbackLocation;
             var declarations = new List<string>();
 
             foreach (var member in members)
             {
-                if (SymbolInspector.HasAttribute(member, IgnoreMemberAttributeFullName))
+                if (SymbolInspector.HasAttribute(member, SingletonConstants.IgnoreMemberAttributeFullName))
                 {
                     continue;
                 }
@@ -256,78 +200,6 @@ namespace EngineRoom.Generators.Singleton
             };
         }
 
-        private static (INamedTypeSymbol? CustomInterface, bool DestroyOnLoad) ReadAttributeArgs(AttributeData attribute)
-        {
-            INamedTypeSymbol? customInterface = null;
-            bool destroyOnLoad = false;
-
-            // Ctor overloads are (bool) and (Type, bool); dispatch by argument kind
-            // so the order of detection is independent of which overload was picked.
-            foreach (var arg in attribute.ConstructorArguments)
-            {
-                if (arg.Kind == TypedConstantKind.Type && arg.Value is INamedTypeSymbol type)
-                {
-                    customInterface = type;
-                }
-                else if (arg.Value is bool flag)
-                {
-                    destroyOnLoad = flag;
-                }
-            }
-
-            foreach (var pair in attribute.NamedArguments)
-            {
-                if (pair.Key == "DestroyOnLoad" && pair.Value.Value is bool flag)
-                {
-                    destroyOnLoad = flag;
-                }
-                else if (pair.Key == "Interface" && pair.Value.Value is INamedTypeSymbol type)
-                {
-                    customInterface = type;
-                }
-            }
-
-            return (customInterface, destroyOnLoad);
-        }
-
-        private static void ReportInterfaceCollisions(SourceProductionContext ctx, ImmutableArray<SingletonInfo?> infos)
-        {
-            var byInterface = new Dictionary<string, List<SingletonInfo>>();
-
-            foreach (var info in infos)
-            {
-                if (info is null || !info.HasCustomInterface)
-                {
-                    continue;
-                }
-
-                if (!byInterface.TryGetValue(info.InterfaceName, out var list))
-                {
-                    list = new List<SingletonInfo>();
-                    byInterface[info.InterfaceName] = list;
-                }
-
-                list.Add(info);
-            }
-
-            foreach (var pair in byInterface)
-            {
-                if (pair.Value.Count < 2)
-                {
-                    continue;
-                }
-
-                foreach (var info in pair.Value)
-                {
-                    ctx.ReportDiagnostic(Diagnostic.Create(
-                        SingletonDiagnostics.DuplicateCustomInterface,
-                        info.ClassLocation,
-                        info.ClassName,
-                        pair.Key));
-                }
-            }
-        }
-
         private static void AddRuntimeType(IncrementalGeneratorPostInitializationContext ctx, string templateName)
         {
             var body = TemplateLoader.Load("Singleton/" + templateName);
@@ -337,24 +209,13 @@ namespace EngineRoom.Generators.Singleton
 
         private static void Emit(SourceProductionContext ctx, SingletonInfo info)
         {
-            foreach (var diagnostic in info.Diagnostics)
-            {
-                ctx.ReportDiagnostic(Diagnostic.Create(diagnostic.Descriptor, diagnostic.Location, diagnostic.Args));
-            }
-
-            if (info.HasBlockingDiagnostic)
-            {
-                return;
-            }
-
-            // Substitution drops in just the call; the placeholder already sits at
-            // the right indent inside the Awake body in the template.
             var dontDestroyLine = info.DestroyOnLoad
                 ? string.Empty
                 : TemplateLoader.Load("Singleton/DontDestroyLine").TrimEnd('\r', '\n');
 
-            // The user adds the custom interface to the base list themselves, so the
-            // generated partial declares the class with no base list of its own.
+            // With a custom interface, the user already lists it in the class base
+            // list themselves; the generated partial then declares the class with
+            // no base list of its own to avoid a duplicate.
             var baseList = info.HasCustomInterface
                 ? string.Empty
                 : TemplateLoader.LoadAndSubstitute("Singleton/SingletonBaseList", new Dictionary<string, string>
@@ -375,9 +236,9 @@ namespace EngineRoom.Generators.Singleton
 
             if (info.HasCustomInterface)
             {
-                // Emit a partial of the user's custom interface that adds the
-                // ISingleton<> base — the user's declaration doesn't carry it,
-                // and without it the Awake-side reference to Instance is invalid.
+                // Emit a partial of the user's interface adding the ISingleton<>
+                // base; without it the generated Awake's reference to Instance
+                // wouldn't resolve.
                 var customInterfaceBody = TemplateLoader.LoadAndSubstitute("Singleton/SingletonCustomInterfacePartial", new Dictionary<string, string>
                 {
                     ["InterfaceAccessibility"] = info.CustomInterfaceAccessibility,
@@ -390,8 +251,6 @@ namespace EngineRoom.Generators.Singleton
                 return;
             }
 
-            // Member declarations land inside the interface block, so indent each
-            // line to match the type body's "members live one level in" convention.
             var membersBlock = info.MemberDeclarations.Count == 0
                 ? string.Empty
                 : string.Join("\n", info.MemberDeclarations.Select(static line => "    " + line));

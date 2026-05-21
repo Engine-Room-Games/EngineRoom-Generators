@@ -4,14 +4,9 @@ using Microsoft.CodeAnalysis;
 
 namespace EngineRoom.Generators.Helpers
 {
-    /// <summary>
-    /// Renders Roslyn symbols into source-text fragments suitable for embedding in
-    /// generated code (interface declarations, today; extendable to other shapes
-    /// as more generators land).
-    /// </summary>
     internal static class SymbolFormatter
     {
-        public static readonly SymbolDisplayFormat FullyQualifiedType = new SymbolDisplayFormat(
+        public static readonly SymbolDisplayFormat FullyQualifiedType = new(
             globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
@@ -112,11 +107,13 @@ namespace EngineRoom.Generators.Helpers
             builder.Append(' ');
             builder.Append(parameter.Name);
 
-            if (parameter.HasExplicitDefaultValue)
+            if (!parameter.HasExplicitDefaultValue)
             {
-                builder.Append(" = ");
-                builder.Append(FormatDefaultValue(parameter.ExplicitDefaultValue));
+                return builder.ToString();
             }
+            
+            builder.Append(" = ");
+            builder.Append(FormatDefaultValue(parameter.ExplicitDefaultValue));
 
             return builder.ToString();
         }

@@ -25,7 +25,7 @@ namespace EngineRoom.Generators.Singleton
         public static readonly DiagnosticDescriptor MustNotDefineAwake = new DiagnosticDescriptor(
             id: "ERG0003",
             title: "[Singleton] class must not define its own Awake",
-            messageFormat: "Class '{0}' is decorated with [Singleton] and must not define an Awake() method. Move that code into AwakeInternal() instead.",
+            messageFormat: "Class '{0}' is decorated with [Singleton] and must not define an Awake() method. Move that code into OnAwake() instead.",
             category: Category,
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);

@@ -65,3 +65,4 @@ No test assemblies exist yet; the first generator work should add an `*.asmdef` 
 - Namespaces mirror assembly namespace + folder structure.
 - Don't reach for `var` when the right-hand side doesn't make the type obvious.
 - Events: present participle = "about to happen" (`OpeningDoor`), past participle = "just happened" (`DoorOpened`); handlers prefix with `On`.
+- **Comments are rare.** Default to none. Add one only when the WHY is non-obvious — a hidden constraint, a workaround, behavior that would surprise the next reader. Don't write XML doc summaries that just restate the type/method name, and don't narrate what well-named code already says.

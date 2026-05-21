@@ -4,11 +4,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace EngineRoom.Generators.Helpers
 {
-    /// <summary>
-    /// Read-only inspection helpers for Roslyn symbols. Distinct from
-    /// <see cref="SymbolFormatter"/>, which renders symbols into source text —
-    /// these methods only answer questions about symbols.
-    /// </summary>
     internal static class SymbolInspector
     {
         public static bool HasAttribute(ISymbol symbol, string attributeFullName)
@@ -24,9 +19,6 @@ namespace EngineRoom.Generators.Helpers
             return false;
         }
 
-        // Walks the base chain; the comparison is by fully-qualified name so the
-        // caller can pass a "global::UnityEngine.MonoBehaviour"-style string
-        // without needing the actual INamedTypeSymbol in hand.
         public static bool InheritsFrom(INamedTypeSymbol type, string baseTypeFullyQualifiedName)
         {
             var current = type.BaseType;
@@ -56,10 +48,9 @@ namespace EngineRoom.Generators.Helpers
             return false;
         }
 
-        // True when a generator can safely emit a partial that extends this type:
-        // top-level (not nested), non-generic, and declared as a partial in the
-        // current compilation. Without these, the emitted partial wouldn't merge
-        // with the user's declaration.
+        // A generator can safely emit a partial extending this type only when it's
+        // top-level, non-generic, and partial in the current compilation — otherwise
+        // the emitted partial won't merge with the user's declaration.
         public static bool IsTopLevelPartialInCompilation(INamedTypeSymbol type)
         {
             if (type.ContainingType is not null
