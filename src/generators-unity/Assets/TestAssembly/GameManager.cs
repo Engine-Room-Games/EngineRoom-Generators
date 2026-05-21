@@ -11,14 +11,10 @@ namespace TestAssembly
         [IgnoreSingletonMember] 
         public int IgnoredInt { get; set; }
         
-        public void StartGame()
-        {
-            
-        }
-        
         partial void AwakeInternal()
         {
-            Debug.Log("Awake Internal");
+            ISoundManager.Instance.PlaySound();
+            ISingleton<ISoundManager>.Instance.PlaySound();
         }
     }
 }

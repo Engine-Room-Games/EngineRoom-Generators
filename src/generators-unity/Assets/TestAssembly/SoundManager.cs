@@ -6,13 +6,10 @@ namespace TestAssembly
     [Singleton(typeof(ISoundManager))]
     public partial class SoundManager : MonoBehaviour, ISoundManager
     {
-        public void PlaySound()
-        {
-            
-        }
+        public void PlaySound() => Debug.Log("Sound Played");
     }
 
-    public interface ISoundManager
+    public partial interface ISoundManager
     {
         void PlaySound();
     }

@@ -69,5 +69,21 @@ namespace EngineRoom.Generators.Singleton
             category: Category,
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
+
+        public static readonly DiagnosticDescriptor CustomInterfaceMustBeExtensible = new DiagnosticDescriptor(
+            id: "ERG0009",
+            title: "[Singleton] custom interface must be partial",
+            messageFormat: "Mark interface '{1}' as partial so the [Singleton] generator can extend it",
+            category: Category,
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
+        public static readonly DiagnosticDescriptor DuplicateCustomInterface = new DiagnosticDescriptor(
+            id: "ERG0010",
+            title: "[Singleton] interface already owned by another class",
+            messageFormat: "Class '{0}' shares singleton interface '{1}' with another [Singleton] class. Only one class can own a given singleton interface.",
+            category: Category,
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
     }
 }

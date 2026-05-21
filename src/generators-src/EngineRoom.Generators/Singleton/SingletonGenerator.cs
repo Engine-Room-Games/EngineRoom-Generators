@@ -44,6 +44,11 @@ namespace EngineRoom.Generators.Singleton
                 .Where(static info => info is not null);
 
             context.RegisterSourceOutput(singletons, static (ctx, info) => Emit(ctx, info!));
+
+            // Two classes targeting the same custom interface would race on the
+            // shared static Instance slot — surface that as a compile error.
+            // Needs a Collect step because the check is cross-symbol.
+            context.RegisterSourceOutput(singletons.Collect(), static (ctx, infos) => ReportInterfaceCollisions(ctx, infos));
         }
 
         private static SingletonInfo? ExtractInfo(GeneratorAttributeSyntaxContext ctx)
@@ -84,6 +89,9 @@ namespace EngineRoom.Generators.Singleton
 
             string interfaceName;
             bool hasCustomInterface;
+            string? customInterfaceShortName = null;
+            string customInterfaceAccessibility = string.Empty;
+            string? customInterfaceNamespace = null;
             if (customInterface is null)
             {
                 interfaceName = "I" + className;
@@ -102,13 +110,31 @@ namespace EngineRoom.Generators.Singleton
                         className,
                         customInterface.ToDisplayString()));
                 }
-                else if (!ClassListsInterface(classSymbol, customInterface))
+                else
                 {
-                    diagnostics.Add(new DiagnosticInfo(
-                        SingletonDiagnostics.CustomInterfaceNotImplemented,
-                        classLocation,
-                        className,
-                        customInterface.ToDisplayString()));
+                    if (!ClassListsInterface(classSymbol, customInterface))
+                    {
+                        diagnostics.Add(new DiagnosticInfo(
+                            SingletonDiagnostics.CustomInterfaceNotImplemented,
+                            classLocation,
+                            className,
+                            customInterface.ToDisplayString()));
+                    }
+
+                    if (!IsExtensibleInSource(customInterface))
+                    {
+                        diagnostics.Add(new DiagnosticInfo(
+                            SingletonDiagnostics.CustomInterfaceMustBeExtensible,
+                            classLocation,
+                            className,
+                            customInterface.ToDisplayString()));
+                    }
+
+                    customInterfaceShortName = customInterface.Name;
+                    customInterfaceAccessibility = AccessibilityKeyword(customInterface.DeclaredAccessibility);
+                    customInterfaceNamespace = customInterface.ContainingNamespace.IsGlobalNamespace
+                        ? null
+                        : customInterface.ContainingNamespace.ToDisplayString();
                 }
             }
 
@@ -123,9 +149,13 @@ namespace EngineRoom.Generators.Singleton
                 className: className,
                 interfaceName: interfaceName,
                 hasCustomInterface: hasCustomInterface,
+                customInterfaceShortName: customInterfaceShortName,
+                customInterfaceAccessibility: customInterfaceAccessibility,
+                customInterfaceNamespace: customInterfaceNamespace,
                 @namespace: containingNamespace,
                 hintPrefix: hintPrefix,
                 destroyOnLoad: destroyOnLoad,
+                classLocation: classLocation,
                 memberDeclarations: memberDeclarations,
                 diagnostics: diagnostics);
         }
@@ -252,6 +282,44 @@ namespace EngineRoom.Generators.Singleton
             return false;
         }
 
+        // The generator extends the custom interface by emitting a partial that
+        // adds the ISingleton<> base. That only works when the interface is a
+        // top-level, non-generic partial defined in the current compilation.
+        private static bool IsExtensibleInSource(INamedTypeSymbol interfaceSymbol)
+        {
+            if (interfaceSymbol.ContainingType is not null
+                || interfaceSymbol.IsGenericType
+                || interfaceSymbol.DeclaringSyntaxReferences.Length == 0)
+            {
+                return false;
+            }
+
+            foreach (var reference in interfaceSymbol.DeclaringSyntaxReferences)
+            {
+                if (reference.GetSyntax() is InterfaceDeclarationSyntax declaration
+                    && declaration.Modifiers.Any(SyntaxKind.PartialKeyword))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string AccessibilityKeyword(Accessibility accessibility)
+        {
+            return accessibility switch
+            {
+                Accessibility.Public => "public ",
+                Accessibility.Internal => "internal ",
+                Accessibility.Protected => "protected ",
+                Accessibility.ProtectedAndInternal => "private protected ",
+                Accessibility.ProtectedOrInternal => "protected internal ",
+                Accessibility.Private => "private ",
+                _ => string.Empty,
+            };
+        }
+
         private static bool InheritsMonoBehaviour(INamedTypeSymbol type)
         {
             var current = type.BaseType;
@@ -303,6 +371,44 @@ namespace EngineRoom.Generators.Singleton
             return (customInterface, destroyOnLoad);
         }
 
+        private static void ReportInterfaceCollisions(SourceProductionContext ctx, ImmutableArray<SingletonInfo?> infos)
+        {
+            var byInterface = new Dictionary<string, List<SingletonInfo>>();
+
+            foreach (var info in infos)
+            {
+                if (info is null || !info.HasCustomInterface)
+                {
+                    continue;
+                }
+
+                if (!byInterface.TryGetValue(info.InterfaceName, out var list))
+                {
+                    list = new List<SingletonInfo>();
+                    byInterface[info.InterfaceName] = list;
+                }
+
+                list.Add(info);
+            }
+
+            foreach (var pair in byInterface)
+            {
+                if (pair.Value.Count < 2)
+                {
+                    continue;
+                }
+
+                foreach (var info in pair.Value)
+                {
+                    ctx.ReportDiagnostic(Diagnostic.Create(
+                        SingletonDiagnostics.DuplicateCustomInterface,
+                        info.ClassLocation,
+                        info.ClassName,
+                        pair.Key));
+                }
+            }
+        }
+
         private static void AddRuntimeType(IncrementalGeneratorPostInitializationContext ctx, string templateName)
         {
             var body = TemplateLoader.Load("Singleton/" + templateName);
@@ -345,6 +451,18 @@ namespace EngineRoom.Generators.Singleton
 
             if (info.HasCustomInterface)
             {
+                // Emit a partial of the user's custom interface that adds the
+                // ISingleton<> base — the user's declaration doesn't carry it,
+                // and without it the Awake-side reference to Instance is invalid.
+                var customInterfaceBody = TemplateLoader.LoadAndSubstitute("Singleton/SingletonCustomInterfacePartial", new Dictionary<string, string>
+                {
+                    ["InterfaceAccessibility"] = info.CustomInterfaceAccessibility,
+                    ["InterfaceShortName"] = info.CustomInterfaceShortName!,
+                    ["InterfaceFullName"] = info.InterfaceName,
+                });
+
+                var customInterfaceText = SourceFileBuilder.Build(customInterfaceBody, info.CustomInterfaceNamespace);
+                ctx.AddSource(info.HintPrefix + ".Singleton.CustomInterfacePartial.g.cs", SourceText.From(customInterfaceText, Encoding.UTF8));
                 return;
             }
 
