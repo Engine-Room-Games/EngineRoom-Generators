@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using EngineRoom.Generators.Helpers;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -67,7 +66,7 @@ namespace EngineRoom.Generators.Singleton
                 ctx.ReportDiagnostic(Diagnostic.Create(SingletonDiagnostics.MustBeMonoBehaviour, classLocation, className));
             }
 
-            if (!HasPartialDeclaration(classSymbol))
+            if (!SymbolInspector.IsPartial(classSymbol))
             {
                 ctx.ReportDiagnostic(Diagnostic.Create(SingletonDiagnostics.MustBePartial, classLocation, className));
             }
@@ -175,20 +174,6 @@ namespace EngineRoom.Generators.Singleton
                         member.Name));
                 }
             }
-        }
-
-        private static bool HasPartialDeclaration(INamedTypeSymbol classSymbol)
-        {
-            foreach (var reference in classSymbol.DeclaringSyntaxReferences)
-            {
-                if (reference.GetSyntax() is ClassDeclarationSyntax declaration
-                    && declaration.Modifiers.Any(SyntaxKind.PartialKeyword))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static Location? GetClassIdentifierLocation(INamedTypeSymbol classSymbol)

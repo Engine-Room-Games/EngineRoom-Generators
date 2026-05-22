@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using EngineRoom.Runtime.Singleton;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,12 +8,15 @@ namespace EngineRoom.Demo.Singletons
 {
     [RequireComponent(typeof(Button))]
     [RequireComponent(typeof(Image))]
-    public class Egg : MonoBehaviour
+    public partial class Egg : MonoBehaviour
     {
         [SerializeField] private State[] _states;
         [SerializeField] private float _shakeDuration = 0.3f;
         [SerializeField] private float _shakeIntensity = 8f;
 
+        [Dependency] private IGameManager _gameManager;
+        [Dependency] private ISoundManager _soundManager;
+        
         private Button _button;
         private Image _image;
         private RectTransform _rectTransform;
@@ -28,28 +32,31 @@ namespace EngineRoom.Demo.Singletons
             _button.onClick.AddListener(OnTapped);
         }
 
-        private void Start()
+        partial void OnStart()
         {
-            _currentStateIndex = ResolveStateIndex(IGameManager.Instance.Count);
+            _currentStateIndex = ResolveStateIndex(_gameManager.Count);
             ApplyStateSprite(_currentStateIndex);
         }
 
         private void OnTapped()
         {
-            IGameManager.Instance.RegisterTap();
+            _gameManager.RegisterTap();
 
-            var nextStateIndex = ResolveStateIndex(IGameManager.Instance.Count);
-            if (nextStateIndex != _currentStateIndex)
+            var nextStateIndex = ResolveStateIndex(_gameManager.Count);
+            
+            if (nextStateIndex == _currentStateIndex)
             {
-                _currentStateIndex = nextStateIndex;
-                StartCoroutine(PlayStateTransition());
+                return;
             }
+            
+            _currentStateIndex = nextStateIndex;
+            StartCoroutine(PlayStateTransition());
         }
 
         private int ResolveStateIndex(int taps)
         {
-            int result = -1;
-            for (int i = 0; i < _states.Length; i++)
+            var result = -1;
+            for (var i = 0; i < _states.Length; i++)
             {
                 if (taps >= _states[i].TapsRequired)
                 {
@@ -61,7 +68,7 @@ namespace EngineRoom.Demo.Singletons
 
         private void ApplyStateSprite(int index)
         {
-            if (index >= 0 && index < _states.Length && _states[index].Sprite != null)
+            if (index >= 0 && index < _states.Length && _states[index].Sprite)
             {
                 _image.sprite = _states[index].Sprite;
             }
@@ -71,14 +78,14 @@ namespace EngineRoom.Demo.Singletons
         {
             _button.interactable = false;
             ApplyStateSprite(_currentStateIndex);
-            ISoundManager.Instance.PlayStateChange();
+            _soundManager.PlayStateChange();
 
-            float elapsed = 0f;
+            var elapsed = 0f;
             while (elapsed < _shakeDuration)
             {
                 elapsed += Time.deltaTime;
-                float falloff = 1f - (elapsed / _shakeDuration);
-                float offset = Mathf.Sin(elapsed * 50f) * _shakeIntensity * falloff;
+                var falloff = 1f - (elapsed / _shakeDuration);
+                var offset = Mathf.Sin(elapsed * 50f) * _shakeIntensity * falloff;
                 _rectTransform.anchoredPosition = _basePosition + new Vector2(offset, 0f);
                 yield return null;
             }

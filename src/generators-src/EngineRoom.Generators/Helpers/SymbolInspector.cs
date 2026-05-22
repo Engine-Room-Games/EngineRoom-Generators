@@ -48,6 +48,20 @@ namespace EngineRoom.Generators.Helpers
             return false;
         }
 
+        public static bool IsPartial(INamedTypeSymbol type)
+        {
+            foreach (var reference in type.DeclaringSyntaxReferences)
+            {
+                if (reference.GetSyntax() is BaseTypeDeclarationSyntax declaration
+                    && declaration.Modifiers.Any(SyntaxKind.PartialKeyword))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         // A generator can safely emit a partial extending this type only when it's
         // top-level, non-generic, and partial in the current compilation — otherwise
         // the emitted partial won't merge with the user's declaration.

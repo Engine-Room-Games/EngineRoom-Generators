@@ -37,6 +37,7 @@
     <Compile Include="..\..\generators-unity\Packages\games.engine-room.generators\Runtime\Singleton\Attributes\SingletonAttribute.cs" Link="Linked\Singleton\Attributes\SingletonAttribute.cs" />
     <Compile Include="..\..\generators-unity\Packages\games.engine-room.generators\Runtime\Singleton\Attributes\SingletonIncludeAttribute.cs" Link="Linked\Singleton\Attributes\SingletonIncludeAttribute.cs" />
     <Compile Include="..\..\generators-unity\Packages\games.engine-room.generators\Runtime\Singleton\Attributes\SingletonIgnoreAttribute.cs" Link="Linked\Singleton\Attributes\SingletonIgnoreAttribute.cs" />
+    <Compile Include="..\..\generators-unity\Packages\games.engine-room.generators\Runtime\Singleton\Attributes\DependencyAttribute.cs" Link="Linked\Singleton\Attributes\DependencyAttribute.cs" />
   </ItemGroup>
 
   <!-- Release builds drop the generator dll into the Unity package so the

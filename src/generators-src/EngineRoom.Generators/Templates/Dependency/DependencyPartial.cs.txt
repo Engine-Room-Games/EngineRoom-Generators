@@ -1,0 +1,10 @@
+partial class %%ClassName%%
+{
+    private void Start()
+    {
+        %%Assignments%%
+        OnStart();
+    }
+
+    partial void OnStart();
+}
