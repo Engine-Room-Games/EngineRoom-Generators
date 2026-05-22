@@ -4,13 +4,21 @@ A Unity package of Roslyn source generators that take care of the boilerplate ar
 
 ## Table of contents
 
+- [Installation](#installation)
 - [Singletons](#singletons)
   - [Singleton Attribute](#singleton)
   - [Dependency Attribute](#dependency)
   - [Swapping in tests](#swapping-in-tests)
   - [Lazy instantiation](#lazy-instantiation)
-- [Installation](#installation)
 - [Requirements](#requirements)
+
+## Installation
+
+Available on [OpenUPM](https://openupm.com/):
+
+```
+openupm add com.engineroom.generators
+```
 
 ## Singletons
 
@@ -188,14 +196,6 @@ public class Bootstrap : MonoBehaviour
 ```
 
 The `[DefaultExecutionOrder]` attribute makes `Bootstrap.Awake` run before any other script, so every `Create()` (the factory emitted by `[Singleton]`) registers its instance before anything else touches it.
-
-## Installation
-
-Available on [OpenUPM](https://openupm.com/):
-
-```
-openupm add com.engineroom.generators
-```
 
 ## Requirements
 
