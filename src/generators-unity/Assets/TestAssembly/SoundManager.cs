@@ -1,4 +1,4 @@
-using EngineRoom;
+using EngineRoom.Runtime.Singleton;
 using UnityEngine;
 
 namespace TestAssembly

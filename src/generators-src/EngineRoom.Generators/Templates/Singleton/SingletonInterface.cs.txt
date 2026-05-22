@@ -1,4 +1,4 @@
-public interface %%InterfaceName%% : global::EngineRoom.ISingleton<%%InterfaceName%%>
+public interface %%InterfaceName%% : global::EngineRoom.Runtime.Singleton.ISingleton<%%InterfaceName%%>
 {
 %%Members%%
 }

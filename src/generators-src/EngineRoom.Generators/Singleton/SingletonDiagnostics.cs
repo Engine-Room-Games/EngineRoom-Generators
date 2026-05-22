@@ -4,7 +4,7 @@ namespace EngineRoom.Generators.Singleton
 {
     internal static class SingletonDiagnostics
     {
-        private const string Category = "EngineRoom.Singleton";
+        private const string Category = "EngineRoom.Runtime.Singleton";
 
         public static readonly DiagnosticDescriptor MustBeMonoBehaviour = new DiagnosticDescriptor(
             id: "ERG0001",
@@ -32,24 +32,24 @@ namespace EngineRoom.Generators.Singleton
 
         public static readonly DiagnosticDescriptor MemberMustBePublic = new DiagnosticDescriptor(
             id: "ERG0004",
-            title: "[SingletonMember] must be public",
-            messageFormat: "Member '{0}' is marked [SingletonMember] and must be declared public to appear on the generated singleton interface",
+            title: "[SingletonInclude] must be public",
+            messageFormat: "Member '{0}' is marked [SingletonInclude] and must be declared public to appear on the generated singleton interface",
             category: Category,
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
         public static readonly DiagnosticDescriptor MemberMustBeInstance = new DiagnosticDescriptor(
             id: "ERG0005",
-            title: "[SingletonMember] must not be static",
-            messageFormat: "Member '{0}' is marked [SingletonMember] and must be an instance member, not static",
+            title: "[SingletonInclude] must not be static",
+            messageFormat: "Member '{0}' is marked [SingletonInclude] and must be an instance member, not static",
             category: Category,
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
         public static readonly DiagnosticDescriptor IgnoreUnusedInExplicitMode = new DiagnosticDescriptor(
             id: "ERG0006",
-            title: "[IgnoreSingletonMember] has no effect when [SingletonMember] is used on the class",
-            messageFormat: "Member '{0}' is marked [IgnoreSingletonMember] but the containing class uses [SingletonMember] for explicit selection. Remove [IgnoreSingletonMember] or drop the [SingletonMember] usages.",
+            title: "[SingletonIgnore] has no effect when [SingletonInclude] is used on the class",
+            messageFormat: "Member '{0}' is marked [SingletonIgnore] but the containing class uses [SingletonInclude] for explicit selection. Remove [SingletonIgnore] or drop the [SingletonInclude] usages.",
             category: Category,
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);

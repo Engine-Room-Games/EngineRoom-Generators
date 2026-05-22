@@ -1,3 +1,3 @@
-%%InterfaceAccessibility%%partial interface %%InterfaceShortName%% : global::EngineRoom.ISingleton<%%InterfaceFullName%%>
+%%InterfaceAccessibility%%partial interface %%InterfaceShortName%% : global::EngineRoom.Runtime.Singleton.ISingleton<%%InterfaceFullName%%>
 {
 }

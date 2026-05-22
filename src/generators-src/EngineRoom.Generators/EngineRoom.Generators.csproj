@@ -27,13 +27,25 @@
     <EmbeddedResource Include="Templates/**/*.cs.txt" WithCulture="false" Type="Non-Resx" />
   </ItemGroup>
 
+  <!-- The runtime attribute types ship as plain .cs inside the Unity package
+       and are linked here so the generator can reference them via typeof()
+       (see Singleton/SingletonConstants.cs) instead of hard-coded strings.
+       ISingleton<T> is intentionally NOT linked: it uses static interface
+       members that netstandard2.0 can't compile, and the generator only ever
+       references it textually in templates. -->
+  <ItemGroup>
+    <Compile Include="..\..\generators-unity\Packages\games.engine-room.generators\Runtime\Singleton\Attributes\SingletonAttribute.cs" Link="Linked\Singleton\Attributes\SingletonAttribute.cs" />
+    <Compile Include="..\..\generators-unity\Packages\games.engine-room.generators\Runtime\Singleton\Attributes\SingletonIncludeAttribute.cs" Link="Linked\Singleton\Attributes\SingletonIncludeAttribute.cs" />
+    <Compile Include="..\..\generators-unity\Packages\games.engine-room.generators\Runtime\Singleton\Attributes\SingletonIgnoreAttribute.cs" Link="Linked\Singleton\Attributes\SingletonIgnoreAttribute.cs" />
+  </ItemGroup>
+
   <!-- Release builds drop the generator dll into the Unity package so the
        Editor picks up the new build on its next asset refresh. The companion
        .dll.meta (no platforms enabled, RoslynAnalyzer label) is checked in
        at the destination, so Unity uses it instead of generating a default. -->
   <Target Name="CopyToUnityPackage" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
     <PropertyGroup>
-      <UnityPackagePath>$(MSBuildThisFileDirectory)..\..\generators-unity\Packages\games.engine-room.generators\Plugins</UnityPackagePath>
+      <UnityPackagePath>$(MSBuildThisFileDirectory)..\..\generators-unity\Packages\games.engine-room.generators\Runtime\Plugins</UnityPackagePath>
     </PropertyGroup>
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(UnityPackagePath)" SkipUnchangedFiles="true" />
     <Message Importance="high" Text="Copied $(TargetFileName) to $(UnityPackagePath)" />

@@ -138,14 +138,14 @@ namespace EngineRoom.Generators.Singleton
         {
             var members = classSymbol.GetMembers();
             var hasExplicitTag = members.Any(static member =>
-                SymbolInspector.HasAttribute(member, SingletonConstants.MemberAttributeFullName));
+                SymbolInspector.HasAttribute(member, SingletonConstants.IncludeAttributeFullName));
 
             foreach (var member in members)
             {
                 var memberLocation = member.Locations.FirstOrDefault() ?? Location.None;
 
                 if (hasExplicitTag
-                    && SymbolInspector.HasAttribute(member, SingletonConstants.IgnoreMemberAttributeFullName))
+                    && SymbolInspector.HasAttribute(member, SingletonConstants.IgnoreAttributeFullName))
                 {
                     ctx.ReportDiagnostic(Diagnostic.Create(
                         SingletonDiagnostics.IgnoreUnusedInExplicitMode,
@@ -153,7 +153,7 @@ namespace EngineRoom.Generators.Singleton
                         member.Name));
                 }
 
-                if (!SymbolInspector.HasAttribute(member, SingletonConstants.MemberAttributeFullName))
+                if (!SymbolInspector.HasAttribute(member, SingletonConstants.IncludeAttributeFullName))
                 {
                     continue;
                 }

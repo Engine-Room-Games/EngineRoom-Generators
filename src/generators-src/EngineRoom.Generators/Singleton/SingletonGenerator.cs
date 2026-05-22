@@ -16,18 +16,8 @@ namespace EngineRoom.Generators.Singleton
     [Generator(LanguageNames.CSharp)]
     public sealed class SingletonGenerator : IIncrementalGenerator
     {
-        private const string RuntimeNamespace = "EngineRoom";
-
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            context.RegisterPostInitializationOutput(static ctx =>
-            {
-                AddRuntimeType(ctx, "SingletonAttribute");
-                AddRuntimeType(ctx, "SingletonMemberAttribute");
-                AddRuntimeType(ctx, "IgnoreSingletonMemberAttribute");
-                AddRuntimeType(ctx, "ISingleton");
-            });
-
             var singletons = context.SyntaxProvider
                 .ForAttributeWithMetadataName(
                     SingletonConstants.AttributeFullName,
@@ -122,7 +112,7 @@ namespace EngineRoom.Generators.Singleton
         {
             var members = classSymbol.GetMembers();
             var hasExplicitTag = members.Any(static member =>
-                SymbolInspector.HasAttribute(member, SingletonConstants.MemberAttributeFullName));
+                SymbolInspector.HasAttribute(member, SingletonConstants.IncludeAttributeFullName));
 
             return hasExplicitTag
                 ? CollectExplicitMembers(members)
@@ -135,7 +125,7 @@ namespace EngineRoom.Generators.Singleton
 
             foreach (var member in members)
             {
-                if (!SymbolInspector.HasAttribute(member, SingletonConstants.MemberAttributeFullName))
+                if (!SymbolInspector.HasAttribute(member, SingletonConstants.IncludeAttributeFullName))
                 {
                     continue;
                 }
@@ -161,7 +151,7 @@ namespace EngineRoom.Generators.Singleton
 
             foreach (var member in members)
             {
-                if (SymbolInspector.HasAttribute(member, SingletonConstants.IgnoreMemberAttributeFullName))
+                if (SymbolInspector.HasAttribute(member, SingletonConstants.IgnoreAttributeFullName))
                 {
                     continue;
                 }
@@ -198,13 +188,6 @@ namespace EngineRoom.Generators.Singleton
                 IPropertySymbol property => !property.IsIndexer,
                 _ => false,
             };
-        }
-
-        private static void AddRuntimeType(IncrementalGeneratorPostInitializationContext ctx, string templateName)
-        {
-            var body = TemplateLoader.Load("Singleton/" + templateName);
-            var source = SourceFileBuilder.Build(body, RuntimeNamespace);
-            ctx.AddSource(templateName + ".g.cs", SourceText.From(source, Encoding.UTF8));
         }
 
         private static void Emit(SourceProductionContext ctx, SingletonInfo info)

@@ -1,4 +1,4 @@
-using EngineRoom;
+using EngineRoom.Runtime.Singleton;
 using UnityEngine;
 
 namespace TestAssembly
@@ -8,12 +8,12 @@ namespace TestAssembly
     {
         public string GameID { get; set; }
         
-        [IgnoreSingletonMember] 
+        [SingletonIgnore]
         public int IgnoredInt { get; set; }
         
         partial void OnAwake()
         {
-            ISoundManager.Instance.PlaySound();
+            ISoundManager.Instance.PlaySound(); 
             ISingleton<ISoundManager>.Instance.PlaySound();
         }
     }

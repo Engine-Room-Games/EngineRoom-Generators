@@ -1,6 +1,6 @@
 {
-    "name": "Games.EngineRoom.Generators",
-    "rootNamespace": "",
+    "name": "EngineRoom.Generators.Runtime",
+    "rootNamespace": "EngineRoom",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

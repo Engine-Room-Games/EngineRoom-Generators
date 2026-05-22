@@ -1,8 +1,0 @@
-/// <summary>
-/// Marks a method or property on a <see cref="SingletonAttribute"/>-decorated class
-/// to be projected onto the generated singleton interface.
-/// </summary>
-[global::System.AttributeUsage(global::System.AttributeTargets.Method | global::System.AttributeTargets.Property)]
-public sealed class SingletonMemberAttribute : global::System.Attribute
-{
-}
