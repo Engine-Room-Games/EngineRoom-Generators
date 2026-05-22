@@ -1,7 +1,7 @@
 {
   "name": "games.engine-room.generators",
   "displayName": "Engine Room Generators",
-  "version": "0.0.1",
+  "version": "1.0.0-rc.1",
   "unity": "2022.3",
   "description": "A Unity package of Roslyn source generators that take care of the boilerplate around common gameplay patterns.",
   "license": "MIT",
@@ -16,5 +16,11 @@
   "documentationUrl": "https://github.com/Engine-Room-Games/EngineRoom-Generators#readme",
   "changelogUrl": "https://github.com/Engine-Room-Games/EngineRoom-Generators/releases",
   "licensesUrl": "https://github.com/Engine-Room-Games/EngineRoom-Generators/blob/main/LICENSE",
-  "keywords": ["roslyn", "source-generator", "singleton", "dependency-injection", "boilerplate"]
+  "keywords": [
+    "roslyn",
+    "source-generator",
+    "singleton",
+    "dependency-injection",
+    "boilerplate"
+  ]
 }
