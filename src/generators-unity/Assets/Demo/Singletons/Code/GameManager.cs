@@ -6,37 +6,26 @@ namespace EngineRoom.Demo.Singletons
     [Singleton]
     public partial class GameManager : MonoBehaviour
     {
-        private const string CountKey = "EggCount";
-        
         public int Count => _count;
 
         [Dependency] private ISoundManager _soundManager;
         [Dependency] private IUiManager _uiManager;
-        
+        [Dependency] private IDataStoreManager _dataStoreManager;
+
         private int _count;
 
         public void RegisterTap()
         {
             _count++;
-            Save();
+            _dataStoreManager.SetScore(_count);
             _soundManager.PlayTap();
             _uiManager.SetCount(_count);
         }
 
-        partial void OnAwake()
-        {
-            _count = PlayerPrefs.GetInt(CountKey, 0);
-        }
-
         partial void OnStart()
         {
+            _count = _dataStoreManager.GetScore();
             _uiManager.SetCount(_count);
-        }
-
-        private void Save()
-        {
-            PlayerPrefs.SetInt(CountKey, _count);
-            PlayerPrefs.Save();
         }
     }
 }
