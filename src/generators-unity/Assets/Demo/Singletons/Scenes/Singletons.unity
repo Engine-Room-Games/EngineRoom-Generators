@@ -163,6 +163,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a6c487d195a4ee59ed49a58bf067133, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EngineRoom.Demo.Singletons::EngineRoom.Demo.Singletons.GameManager
+  _resetAction:
+    m_Name: Reset
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: f35e042b-181f-4c56-98af-471787fdf767
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 598c8f1a-f86d-4c16-8a01-7d9bc5f5b9ea
+      m_Path: <Keyboard>/r
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Reset
+      m_Flags: 0
+    m_Flags: 0
 --- !u!1 &603310417
 GameObject:
   m_ObjectHideFlags: 0
@@ -240,6 +257,7 @@ Transform:
   - {fileID: 341216767}
   - {fileID: 1087643431}
   - {fileID: 603310418}
+  - {fileID: 1809670195}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &762605932
@@ -843,6 +861,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1809670194
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1809670195}
+  - component: {fileID: 1809670196}
+  m_Layer: 0
+  m_Name: PlayerPrefsManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1809670195
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1809670194}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 740114514}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1809670196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1809670194}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f8e2d1c5b7a9d4e80f2a1b8c3d5e9f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: EngineRoom.Demo.Singletons::EngineRoom.Demo.Singletons.DataStoreManager
 --- !u!1 &2031433517
 GameObject:
   m_ObjectHideFlags: 0
@@ -894,6 +956,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10d3bad3912a4a1ca0d8afa6dd1087fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: EngineRoom.Demo.Singletons::EngineRoom.Demo.Singletons.Egg
+  _button: {fileID: 2031433520}
+  _image: {fileID: 2031433521}
   _states:
   - <TapsRequired>k__BackingField: 0
     <Sprite>k__BackingField: {fileID: 1407693422, guid: 1d2fab073609a44439cd9f807b9946f0, type: 3}
@@ -907,8 +971,7 @@ MonoBehaviour:
     <Sprite>k__BackingField: {fileID: -1032891039, guid: 1d2fab073609a44439cd9f807b9946f0, type: 3}
   - <TapsRequired>k__BackingField: 1000
     <Sprite>k__BackingField: {fileID: -872879602, guid: 1d2fab073609a44439cd9f807b9946f0, type: 3}
-  _shakeDuration: 0.3
-  _shakeIntensity: 8
+  _transitionDuration: 0.3
 --- !u!114 &2031433520
 MonoBehaviour:
   m_ObjectHideFlags: 0

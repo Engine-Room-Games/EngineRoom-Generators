@@ -14,17 +14,17 @@ namespace EngineRoom.Demo.Singletons
 
         private int _count;
 
+        partial void OnStart()
+        {
+            _count = _dataStoreManager.GetScore();
+            _uiManager.SetCount(_count);
+        }
+
         public void RegisterTap()
         {
             _count++;
             _dataStoreManager.SetScore(_count);
             _soundManager.PlayTap();
-            _uiManager.SetCount(_count);
-        }
-
-        partial void OnStart()
-        {
-            _count = _dataStoreManager.GetScore();
             _uiManager.SetCount(_count);
         }
     }
