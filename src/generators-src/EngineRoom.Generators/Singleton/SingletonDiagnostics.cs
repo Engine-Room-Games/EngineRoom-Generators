@@ -80,10 +80,10 @@ namespace EngineRoom.Generators.Singleton
 
         public static readonly DiagnosticDescriptor DuplicateCustomInterface = new DiagnosticDescriptor(
             id: "ERG0010",
-            title: "[Singleton] interface already owned by another class",
-            messageFormat: "Class '{0}' shares singleton interface '{1}' with another [Singleton] class. Only one class can own a given singleton interface.",
+            title: "[Singleton] interface shared with another class",
+            messageFormat: "Class '{0}' shares singleton interface '{1}' with another [Singleton] class. This can cause issues — use with caution.",
             category: Category,
-            defaultSeverity: DiagnosticSeverity.Error,
+            defaultSeverity: DiagnosticSeverity.Info,
             isEnabledByDefault: true);
     }
 }
