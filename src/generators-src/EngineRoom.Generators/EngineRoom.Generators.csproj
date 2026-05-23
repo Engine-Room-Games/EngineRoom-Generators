@@ -7,7 +7,7 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <!-- Kept in lockstep with the UPM package.json version.
          The release workflow rewrites both files together. -->
-    <Version>1.0.0-rc.2</Version>
+    <Version>1.0.0-rc.3</Version>
     <!-- RS2008 demands AnalyzerReleases.{Shipped,Unshipped}.md tracking files.
          That's only meaningful for analyzer packages shipped via NuGet; this
          dll is dropped directly into Unity, so the tracking is dead weight. -->
