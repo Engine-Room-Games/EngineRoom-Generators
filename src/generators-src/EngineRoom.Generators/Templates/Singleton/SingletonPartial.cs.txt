@@ -2,7 +2,7 @@ partial class %%ClassName%%%%BaseList%%
 {
     public static %%InterfaceName%% Create()
     {
-        var obj = new global::UnityEngine.GameObject();
+        var obj = new global::UnityEngine.GameObject(nameof(%%ClassName%%));
         return obj.AddComponent<%%ClassName%%>();
     }
     
