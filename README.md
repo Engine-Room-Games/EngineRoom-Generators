@@ -217,13 +217,13 @@ public partial class DataStoreManager : MonoBehaviour, IDataStoreManager
 
 &nbsp;
 
-When the generator synthesises the interface, it has to decide which members of your class show up on it. By default that's every public method and property. `[SingletonInclude]` and `[SingletonIgnore]` give you fine-grained control. They are mutually exclusive *per class* — using `[SingletonInclude]` anywhere on the class flips the generator into **explicit mode**.
+When the generator synthesises the interface, it has to decide which members of your class show up on it. By default that's every public method, property, and event. `[SingletonInclude]` and `[SingletonIgnore]` give you fine-grained control. They are mutually exclusive *per class* — using `[SingletonInclude]` anywhere on the class flips the generator into **explicit mode**.
 
 > **Note** — Neither attribute applies when you supply your own interface via `[Singleton(typeof(IFoo))]`; in that case the interface contract is whatever you typed.
 
 **Auto mode** *(default — no `[SingletonInclude]` on the class)*
 
-Every public instance method and property is on the interface. Use `[SingletonIgnore]` to hide individual members:
+Every public instance method, property, and event is on the interface. Use `[SingletonIgnore]` to hide individual members:
 
 ```csharp
 [Singleton]
@@ -255,7 +255,7 @@ public partial class SoundManager : MonoBehaviour
 
 **Constraints**
 
-- Both attributes target methods and properties only.
+- Both attributes target methods, properties, and events only.
 - `[SingletonInclude]` members must be **public** and **non-static** — the analyzer raises `ER0xxx` diagnostics otherwise.
 
 </details>

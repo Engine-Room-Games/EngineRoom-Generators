@@ -186,6 +186,7 @@ namespace EngineRoom.Generators.Singleton
             {
                 IMethodSymbol method => method.MethodKind == MethodKind.Ordinary,
                 IPropertySymbol property => !property.IsIndexer,
+                IEventSymbol => true,
                 _ => false,
             };
         }

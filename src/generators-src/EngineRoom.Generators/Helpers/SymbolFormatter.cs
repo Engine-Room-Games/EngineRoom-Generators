@@ -34,6 +34,7 @@ namespace EngineRoom.Generators.Helpers
             {
                 IMethodSymbol method => FormatMethod(method),
                 IPropertySymbol property => FormatProperty(property),
+                IEventSymbol @event => FormatEvent(@event),
                 _ => string.Empty,
             };
         }
@@ -78,6 +79,17 @@ namespace EngineRoom.Generators.Helpers
             }
 
             builder.Append('}');
+            return builder.ToString();
+        }
+
+        private static string FormatEvent(IEventSymbol @event)
+        {
+            var builder = new StringBuilder();
+            builder.Append("event ");
+            builder.Append(@event.Type.ToDisplayString(FullyQualifiedType));
+            builder.Append(' ');
+            builder.Append(@event.Name);
+            builder.Append(';');
             return builder.ToString();
         }
 
